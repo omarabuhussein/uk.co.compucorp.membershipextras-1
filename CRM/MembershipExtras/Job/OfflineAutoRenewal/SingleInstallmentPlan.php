@@ -175,9 +175,38 @@ class CRM_MembershipExtras_Job_OfflineAutoRenewal_SingleInstallmentPlan extends 
       $this->endLineItem($line['id'], $newEndDate);
 
       if ($line['auto_renew']) {
-        $this->duplicateSubscriptionLine($line, $newStartDate);
+        $upgradableMembershipType = $this->calculateUpgradableMembershipType($line);
+        if (!empty($upgradableMembershipType)) {
+          $this->createUpgradableSubscriptionMembershipLine($line, $newStartDate);
+        }
+        else {
+          $this->duplicateSubscriptionLine($line, $newStartDate);
+        }
       }
     }
+  }
+
+  private function calculateUpgradableMembershipType($line) {
+    return 'Student Upgrade';
+  }
+
+  private function createUpgradableSubscriptionMembershipLine($line, $startDate) {
+    $lineItemParams = $line['api.LineItem.getsingle'];
+    $lineItemParams['price_field_id'] = 4;
+    $lineItemParams['price_field_value_id'] = 22;
+    $lineItemParams['unit_price'] = $this->calculateLineItemUnitPrice($lineItemParams);
+    $lineItemParams['line_total'] = MoneyUtilities::roundToCurrencyPrecision($lineItemParams['unit_price'] * $lineItemParams['qty']);
+    $lineItemParams['tax_amount'] = $this->calculateLineItemTaxAmount($lineItemParams['line_total'], $lineItemParams['financial_type_id']);
+    unset($lineItemParams['id']);
+
+    $newLineItem = civicrm_api3('LineItem', 'create', $lineItemParams);
+
+    CRM_MembershipExtras_BAO_ContributionRecurLineItem::create([
+      'contribution_recur_id' => $line['contribution_recur_id'],
+      'line_item_id' => $newLineItem['id'],
+      'start_date' => $startDate->format('Y-m-d'),
+      'auto_renew' => 1,
+    ]);
   }
 
   /**

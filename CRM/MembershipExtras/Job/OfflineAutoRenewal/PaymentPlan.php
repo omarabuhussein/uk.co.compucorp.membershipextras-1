@@ -339,7 +339,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @return float
    */
   protected function calculateLineItemUnitPrice($lineItem) {
-    $priceFieldValue = !empty($lineItem['price_field_value_id']) ? $this->getPriceFieldValue($lineItem['price_field_value_id']) : [];
+    $priceFieldValue = $this->getPriceFieldValue($lineItem['price_field_value_id']);
     if (!$this->isMembershipLineItem($lineItem, $priceFieldValue)) {
       return $lineItem['unit_price'];
     }
@@ -377,10 +377,6 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @return boolean
    */
   protected function isMembershipLineItem($lineItem, $priceFieldValue = NULL) {
-    if ($lineItem['entity_table'] == 'civicrm_membership') {
-      return TRUE;
-    }
-
     if (isset($priceFieldValue) && !empty($priceFieldValue['membership_type_id'])) {
       return TRUE;
     }
@@ -399,14 +395,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @return mixed
    */
   private function getMembershipMinimumFeeFromLineItem($lineItem, $priceFieldValue) {
-    if ($lineItem['entity_table'] == 'civicrm_membership') {
-      $membershipTypeID = civicrm_api3('Membership', 'getsingle', [
-        'id' => $lineItem['entity_id'],
-      ])['membership_type_id'];
-    }
-    else {
-      $membershipTypeID = $priceFieldValue['membership_type_id'];
-    }
+    $membershipTypeID = $priceFieldValue['membership_type_id'];
 
     $membershipType = civicrm_api3('MembershipType', 'getsingle', [
       'id' => $membershipTypeID,
@@ -554,6 +543,7 @@ abstract class CRM_MembershipExtras_Job_OfflineAutoRenewal_PaymentPlan {
    * @return int
    */
   private function getExistingMembershipForLineItem($lineItem, $priceFieldValue) {
+    return 0;
     if ($lineItem['entity_table'] == 'civicrm_membership') {
       return $lineItem['entity_id'];
     }
