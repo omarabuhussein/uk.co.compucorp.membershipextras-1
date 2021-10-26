@@ -466,3 +466,17 @@ function membershipextras_civicrm_permission(&$permissions) {
     ],
   ];
 }
+
+/**
+ * Implements fieldOptions hook().
+ *
+ * @param string $entity
+ * @param string $field
+ * @param array $options
+ * @param array $params
+ */
+function membershipextras_civicrm_fieldOptions($entity, $field, &$options, $params) {
+  if (in_array($entity, ['FinancialItem', 'LineItem']) && $field == 'entity_table') {
+    $options['civicrm_contribution_recur'] = ts('Recurring Contribution');
+  }
+}
